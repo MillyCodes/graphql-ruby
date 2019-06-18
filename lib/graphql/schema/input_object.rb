@@ -38,6 +38,11 @@ module GraphQL
         end
       end
 
+      def to_hash
+        to_h
+      end
+
+
       # @return [GraphQL::Query::Context] The context for this query
       attr_reader :context
 
