@@ -270,6 +270,42 @@ describe GraphQL::Schema::InputObject do
     end
   end
 
+  describe "#to_hash" do
+    # GraphApi::Schema.execute(" query($demographics: MemberDemographicsParams!) { memberEligibility(demographics: $demographics) { name } }", variables: { demographics: member } )
+
+
+    module InputObjectToHTest
+      class TestInput1 < GraphQL::Schema::InputObject
+        graphql_name "TestInput1"
+        argument :d, Int, required: true
+        argument :e, Int, required: true
+        argument :instrument_id, ID, required: true, loads: Jazz::InstrumentType
+      end
+
+      class TestInput2 < GraphQL::Schema::InputObject
+        graphql_name "TestInput2"
+        argument :a, Int, required: true
+        argument :b, Int, required: true
+        argument :c, TestInput1, as: :inputObject, required: true
+      end
+
+      TestInput1.to_json
+      TestInput2.to_json
+    end
+
+    it "returns a symbolized, aliased, ruby keyword style hash" do
+      arg_values = {a: 1, b: 2, c: { d: 3, e: 4, instrumentId: "Instrument/Drum Kit"}}
+
+      input_object = InputObjectToHTest::TestInput2.new(
+        arg_values,
+        context: OpenStruct.new(schema: Jazz::Schema),
+        defaults_used: Set.new
+      )
+
+      assert_equal({ a: 1, b: 2, input_object: { d: 3, e: 4, instrument: Jazz::Models::Instrument.new("Drum Kit", "PERCUSSION") } }, input_object.to_h)
+    end
+  end
+
   describe "when used with default_value" do
     it "comes as an instance" do
       res = Jazz::Schema.execute("{ defaultValueTest }")
